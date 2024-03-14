@@ -1,0 +1,45 @@
+{
+  "httpServer": {
+    "ip": "127.0.0.1",
+    "port": 8099
+  },
+  "udpServer": {
+    "ip": "192.168.3.84",
+    "port": 5500
+  },
+  "virtualHumanSever": {
+    "ip": "192.168.3.197",
+    "port": 5501
+  },
+  "multiScreenPlayer": {
+    "port": 5503
+  },
+  "qaAIImgPattern": [
+    ".*做.*图.*",
+    ".*作.*图.*",
+    ".*画.*图.*",
+    ".*做.*画.*",
+    ".*作.*画.*",
+    ".*画.*画.*",
+    ".*做一张.*",
+    ".*作一张.*",
+    ".*画一张.*",
+    ".*做一幅.*",
+    ".*作一幅.*",
+    ".*画一幅.*"
+  ],
+  "fileDictionary": "C:\\wav\\",
+  "audio2Face": {
+    "serverAddress": "http://192.168.3.197:8011",
+    "usdFile": "UE5MetaHuman.usd",
+    "wavFile": "default.wav"
+  },
+  "similarIndustryQADataSetting": {
+    "getTokenAPIUrl": "http://192.168.3.198:8082/api/get-token?username={0}&password={1}",
+    "getAllQuestsAndReplysAPIUrl": "http://192.168.3.198:8082/chat-quest/get-all-quests-and-replys?token={0}",
+    "similarAPIUrl": "http://192.168.3.198:8082/chat-quest/answer-quest?content={0}&token={1}",
+    "relevanceThreshold": 0.3,
+    "similarityThreshold": 0.8,
+    "localFileDictionary": "C:\\wav\\"
+  }
+}
