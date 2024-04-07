@@ -229,7 +229,7 @@ namespace VitualPersonSpeech.Utils
         MSP_ERROR_TUV_GETHIDPARAM = 10901,     /* 0x2A95 */   /* Get Busin Param huanid*/
         MSP_ERROR_TUV_TOKEN = 10902,     /* 0x2A96 */   /* Get Token */
         MSP_ERROR_TUV_CFGFILE = 10903,     /* 0x2A97 */   /* Open cfg file */
-        MSP_ERROR_TUV_RECV_CONTENT = 10904,     /* 0x2A98 */   /* received content is error */
+        MSP_ERROR_TUV_RECV_CONTENT = 10904,     /* 0x2A98 */   /* received replyContent is error */
         MSP_ERROR_TUV_VERFAIL = 10905,     /* 0x2A99 */   /* Verify failure */
 
         /* Error codes of IMTV */

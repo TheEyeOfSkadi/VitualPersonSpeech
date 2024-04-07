@@ -225,9 +225,9 @@
     <Compile Include="HttpServerService.cs" />
     <Compile Include="Model\BaiduAIImgResult.cs" />
     <Compile Include="Model\BaiduAsrResult.cs" />
-    <Compile Include="Model\EventHandlerMsg.cs" />
+    <Compile Include="Model\ResultMsg.cs" />
     <Compile Include="Model\IndustryQAChatQuestReply.cs" />
-    <Compile Include="Model\IndustryQAData.cs" />
+    <Compile Include="Model\IndustryQASimilarResult.cs" />
     <Compile Include="Model\LocalIndustryQAData.cs" />
     <Compile Include="Model\MultiScreenPlayerCtrlType.cs" />
     <Compile Include="Model\VisualPersonCtrlType.cs" />
@@ -320,7 +320,6 @@
     <Content Include="Libs\VoiceRecorder.Audio.dll" />
     <Content Include="Libs\XunFei\msc.dll" />
     <Content Include="Libs\XunFei\msc_x64.dll" />
-    <Resource Include="v2-e3ff581c4f19196977248b7297a044f5_r.jpg" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Libs\XunFei\audio\" />

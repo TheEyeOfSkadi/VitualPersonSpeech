@@ -1,8 +1,6 @@
 ﻿using log4net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Runtime.CompilerServices;
-using VitualPersonSpeech.Model;
 
 namespace VitualPersonSpeech.Utils
 {
@@ -19,6 +17,7 @@ namespace VitualPersonSpeech.Utils
             audio2FaceServerAddress = Audio2FaceServerAddress;
         }
 
+        // audio2face接口直接调用
         public static bool GetAudio2FaceServerStatus()
         {
             string url = audio2FaceServerAddress + "/status";
@@ -247,7 +246,7 @@ namespace VitualPersonSpeech.Utils
             }
             return false;
         }
-
+ 
         public static bool ActivateAudio2FaceExporterStreamLiveLink()
         {
             string url = audio2FaceServerAddress + "/A2F/Exporter/ActivateStreamLivelink";

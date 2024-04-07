@@ -1,8 +1,6 @@
-﻿using Baidu.Aip.Speech;
-using log4net;
+﻿using log4net;
 using MessageCtrl;
 using MiniExcelLibs;
-using NAudio.Codecs;
 using NAudio.Wave;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -13,18 +11,13 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
-using System.Xml;
 using ToastNotifications;
 using ToastNotifications.Lifetime;
 using ToastNotifications.Messages;
@@ -81,7 +74,7 @@ namespace VitualPersonSpeech
 
         // 语音唤醒
         // 讯飞语音唤醒
-        private const string xunfeiWakeOnAppId = "c9772efc";
+        private const string xunfeiWakeOnAppId = "af564733";
         XunFeiUtils.ivw_ntf_handler IVW_callback;
         AudioStatus aud_stat = AudioStatus.ISR_AUDIO_SAMPLE_CONTINUE;
 
@@ -128,15 +121,17 @@ namespace VitualPersonSpeech
 
         // 本地知识库
         private LocalIndustryQAData[] industryQADatas;
-        private Dictionary<int, IndustryQAChatQuestReply> industryQAChatQuestReplyDic = new Dictionary<int, IndustryQAChatQuestReply>();
+        private Dictionary<int, IndustryQAChatReply> industryQAChatReplyDic = new Dictionary<int, IndustryQAChatReply>();
         private string industryQAUserName = "1";
         private string industryQAPassword = "1";
         private string industryQAUserAccessToken = "";
         private string industryQAGetTokenAPIUrl = "http://192.168.3.99:8082/api/get-token?username={0}&password={1}";
-        private string industryQAGetAllQuestsAndReplysAPIUrl = "http://192.168.3.99:8082/chat-quest/get-all-quests-and-replys?token={0}";
+        private string industryQAGetAllReplysAndScenesAPIUrl = "http://192.168.3.197:8082/chat-reply/get-all-replys-and-scenes?token={0}";
         private string industryQASimilarAPIUrl = "http://192.168.3.99:8082/chat-quest/answer-quest?content={0}&token={1}";
+        private string industryQADownloadFileAPIUrl = "http://192.168.3.197:9000/{0}";
         private float industryQARelevanceThreshold = 0.1f;
         private float industryQASimilarityThreshold = 0.1f;
+        private string industryQALocalFileDictionary = "C:\\wav\\";
 
         // AI应答
         // 百度文心一言接口appkey和secret
@@ -176,7 +171,6 @@ namespace VitualPersonSpeech
         private string baiduAIImgTaskId = "";
         private DispatcherTimer getBaiduAIImgTimer;
 
-      
         public MainWindow()
         {
             InitializeComponent();
@@ -190,48 +184,43 @@ namespace VitualPersonSpeech
             DebugMessage("虚拟数字人语音识别模块运行");
 
             LoadConfig();
-
+            
             InitUdpServer();
 
             StartCheckVirtualPersonTimer();
 
-            //InitWaveIn();
+            InitWaveIn();
 
-            //StartWaveInRecording();
+            StartWaveInRecording();
 
-            //InitAudioRecorder();
+            InitAudioRecorder();
 
-            //StartWakeOn();
+            StartWakeOn();
 
-            //GetSimilarIndustryQADataSetting();
+            InitDownloader();
 
-            //InitDownloader();
+            GetindustryQADataSetting();
 
-            //GetIndustryQAAccessToken();
+            GetIndustryQAAccessToken();
             //GetIndustryQADataByExcel();
 
-            //GetIndustryQAAllQuestsAndReplys();
+            DownloadAllIndustryFile();
 
-            //DownloadAllQuestsAndReplysFileSource();
+            GetQAIsAIImgPattern();
 
-            //GetWenXinAccessToken();
+            GetBaiduAIImgAccessToken();
 
-            //GetQAIsAIImgPattern();
+            InitGetAIImgTimer();
 
-            //GetBaiduAIImgAccessToken();
+            GetWenXinAccessToken();
 
-            //InitGetAIImgTimer();
+            GetBaiduLongTTSAccessToken();
 
-            //GetBaiduLongTTSAccessToken();
+            InitGetLongTTSTimer();
 
-            //InitGetLongTTSTimer();
-
-            //InitAudio2FaceServer();
+            InitAudio2FaceServer();
 
             StartHttpServerService();
-
-            //VirtualHumanBg virtualHumanBg = new VirtualHumanBg();
-            //virtualHumanBg.Show();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -250,6 +239,8 @@ namespace VitualPersonSpeech
         // 结束录音按钮点击事件
         private void StopRecording_Button_Click(object sender, RoutedEventArgs e)
         {
+            
+
             StopWaveInRecording();
 
             if (asrApi == AsrApi.BaiduAsr)
@@ -297,140 +288,13 @@ namespace VitualPersonSpeech
         private void AIReply_Button_Click(object sender, RoutedEventArgs e)
         {
             //ChatWenXin(AIReply_TextBox.Text);
-
             asrStr = AIReply_TextBox.Text;
-
-            IndustryQAData industryQAData = GetSimilarIndustryQAData(asrStr);
-
-            if (industryQAData != null)
-            {
-                DebugMessage(string.Format("行业知识库匹配完成，ES权重：{0}，NLP相似度：{1}，原问题：{2}，匹配问题：{3}，匹配回答：{4}", industryQAData.relevance, industryQAData.similarity, industryQAData.questStr, industryQAData.similarStr, industryQAData.reply));
-
-                if (industryQAData.relevance > industryQARelevanceThreshold && industryQAData.similarity > industryQASimilarityThreshold)
-                {
-                    DebugMessage("行业知识库匹配结果满足权重阈值和相似度阈值，使用行业知识库回答进行应答");
-
-                    if (string.IsNullOrEmpty(industryQAData.fileSource))
-                    {
-                        string fileFullName = BaiduShortTTS(industryQAData.reply);
-
-                        if (string.IsNullOrEmpty(fileFullName))
-                        {
-                            DebugMessage("百度短文本转语音出现错误，数字人响应api错误");
-                            Ctrl2SayApiError();
-                        }
-                        else
-                        {
-                            DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
-                            Ctrl2SayWav(Path.GetFileName(fileFullName));
-                        }
-                    }
-                    else
-                    {
-                        if (File.Exists(Path.Combine(configJObect["similarIndustryQADataSetting"]["localFileDictionary"].ToString(), Path.GetFileName(industryQAData.fileSource))))
-                        {
-                            Ctrl2SayWav(Path.GetFileName(industryQAData.fileSource));
-                        }
-                        else
-                        {
-                            string fileFullName = BaiduShortTTS(industryQAData.reply);
-
-                            if (string.IsNullOrEmpty(fileFullName))
-                            {
-                                DebugMessage("百度短文本转语音出现错误，数字人响应api错误");
-                                Ctrl2SayApiError();
-                            }
-                            else
-                            {
-                                DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
-                                Ctrl2SayWav(Path.GetFileName(fileFullName));
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    DebugMessage("行业知识库匹配结果不满足相似度阈值或权重，进行百度文心AI应答");
-                    string asrResult = ChatWenXin(asrStr);
-
-                    if (string.IsNullOrEmpty(asrResult))
-                    {
-                        DebugMessage("调用文心ai应答接口出现错误，数字人响应api错误");
-                        Ctrl2SayApiError();
-                    }
-                    else
-                    {
-                        // 合成的文本，文本长度必须小于1024GBK字节。建议每次请求文本不超过120字节，约为60个汉字或者字母数字。
-                        // 请注意计费统计依据：120个GBK字节以内（含120个）记为1次计费调用；每超过120个GBK字节则多记1次计费调用。
-                        if (asrResult.Length <= 500)
-                        {
-                            DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，小于等于500，采用短文本转语音", asrResult.Length));
-
-                            string fileFullName = BaiduShortTTS(asrResult);
-
-                            if (string.IsNullOrEmpty(fileFullName))
-                            {
-                                DebugMessage("百度短文本转语音出现错误，数字人响应api错误");
-                                Ctrl2SayApiError();
-                            }
-                            else
-                            {
-                                DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
-                                Ctrl2SayWav(Path.GetFileName(fileFullName));
-                            }
-                        }
-                        else
-                        {
-                            DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，大于500，采用长文本转语音", asrResult.Length));
-                            CreateBaiduLongTTS(asrResult);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                DebugMessage("行业知识库未匹配到相关问答，进行百度文心AI应答");
-                string asrResult = ChatWenXin(asrStr);
-
-                if (string.IsNullOrEmpty(asrResult))
-                {
-                    DebugMessage("调用文心ai应答接口出现错误，数字人响应api错误");
-                    Ctrl2SayApiError();
-                }
-                else
-                {
-                    // 合成的文本，文本长度必须小于1024GBK字节。建议每次请求文本不超过120字节，约为60个汉字或者字母数字。
-                    // 请注意计费统计依据：120个GBK字节以内（含120个）记为1次计费调用；每超过120个GBK字节则多记1次计费调用。
-                    if (asrResult.Length <= 500)
-                    {
-                        DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，小于等于500，采用短文本转语音", asrResult.Length));
-
-                        string fileFullName = BaiduShortTTS(asrResult);
-
-                        if (string.IsNullOrEmpty(fileFullName))
-                        {
-                            DebugMessage("百度短文本转语音出现错误，数字人响应api错误", MSG_TYPE.ERROR);
-                            Ctrl2SayApiError();
-                        }
-                        else
-                        {
-                            DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
-                            Ctrl2SayWav(Path.GetFileName(fileFullName));
-                        }
-                    }
-                    else
-                    {
-                        DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，大于500，采用长文本转语音", asrResult.Length));
-                        CreateBaiduLongTTS(asrResult);
-                    }
-                }
-            }
-
+            AIReply(asrStr);
         }
 
         private void Audio2FaceLoadUSD_Button_Click(object sender, RoutedEventArgs e)
         {
-            if (Audio2FaceUtils.LoadAudio2FaceUSD(configJObect["fileDictionary"].ToString() + configJObect["audio2Face"]["usdFile"].ToString()))
+            if (Audio2FaceUtils.LoadAudio2FaceUSD(configJObect["audio2Face"]["usdFile"].ToString()))
             {
                 DebugMessage("Audio2Face服务加载 " + configJObect["audio2Face"]["usdFile"].ToString() + " 成功", MSG_TYPE.INFO);
             }
@@ -523,135 +387,6 @@ namespace VitualPersonSpeech
             else
             {
                 AIReply(data);
-            }
-        }
-
-        public void AIReply(string asrStr)
-        {
-            IndustryQAData industryQAData = GetSimilarIndustryQAData(asrStr);
-
-            if (industryQAData != null)
-            {
-                DebugMessage(string.Format("行业知识库匹配完成，ES权重：{0}，NLP相似度：{1}，原问题：{2}，匹配问题：{3}，匹配回答：{4}", industryQAData.relevance, industryQAData.similarity, industryQAData.questStr, industryQAData.similarStr, industryQAData.reply));
-
-                if (industryQAData.relevance > industryQARelevanceThreshold && industryQAData.similarity > industryQASimilarityThreshold)
-                {
-                    DebugMessage("行业知识库匹配结果满足权重阈值和相似度阈值，使用行业知识库回答进行应答");
-
-                    if (string.IsNullOrEmpty(industryQAData.fileSource))
-                    {
-                        string fileFullName = BaiduShortTTS(industryQAData.reply);
-
-                        if (string.IsNullOrEmpty(fileFullName))
-                        {
-                            DebugMessage("百度短文本转语音出现错误，数字人响应api错误");
-                            Ctrl2SayApiError();
-                        }
-                        else
-                        {
-                            DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
-                            Ctrl2SayWav(Path.GetFileName(fileFullName));
-                        }
-                    }
-                    else
-                    {
-                        if (File.Exists(Path.Combine(configJObect["similarIndustryQADataSetting"]["localFileDictionary"].ToString(), Path.GetFileName(industryQAData.fileSource))))
-                        {
-                            Ctrl2SayWav(Path.GetFileName(industryQAData.fileSource));
-                        }
-                        else
-                        {
-                            string fileFullName = BaiduShortTTS(industryQAData.reply);
-
-                            if (string.IsNullOrEmpty(fileFullName))
-                            {
-                                DebugMessage("百度短文本转语音出现错误，数字人响应api错误");
-                                Ctrl2SayApiError();
-                            }
-                            else
-                            {
-                                DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
-                                Ctrl2SayWav(Path.GetFileName(fileFullName));
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    DebugMessage("行业知识库匹配结果不满足相似度阈值或权重，进行百度文心AI应答");
-                    string asrResult = ChatWenXin(asrStr);
-
-                    if (string.IsNullOrEmpty(asrResult))
-                    {
-                        DebugMessage("调用文心ai应答接口出现错误，数字人响应api错误");
-                        Ctrl2SayApiError();
-                    }
-                    else
-                    {
-                        // 合成的文本，文本长度必须小于1024GBK字节。建议每次请求文本不超过120字节，约为60个汉字或者字母数字。
-                        // 请注意计费统计依据：120个GBK字节以内（含120个）记为1次计费调用；每超过120个GBK字节则多记1次计费调用。
-                        if (asrResult.Length <= 500)
-                        {
-                            DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，小于等于500，采用短文本转语音", asrResult.Length));
-
-                            string fileFullName = BaiduShortTTS(asrResult);
-
-                            if (string.IsNullOrEmpty(fileFullName))
-                            {
-                                DebugMessage("百度短文本转语音出现错误，数字人响应api错误");
-                                Ctrl2SayApiError();
-                            }
-                            else
-                            {
-                                DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
-                                Ctrl2SayWav(Path.GetFileName(fileFullName));
-                            }
-                        }
-                        else
-                        {
-                            DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，大于500，采用长文本转语音", asrResult.Length));
-                            CreateBaiduLongTTS(asrResult);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                DebugMessage("行业知识库未匹配到相关问答，进行百度文心AI应答");
-                string asrResult = ChatWenXin(asrStr);
-
-                if (string.IsNullOrEmpty(asrResult))
-                {
-                    DebugMessage("调用文心ai应答接口出现错误，数字人响应api错误");
-                    Ctrl2SayApiError();
-                }
-                else
-                {
-                    // 合成的文本，文本长度必须小于1024GBK字节。建议每次请求文本不超过120字节，约为60个汉字或者字母数字。
-                    // 请注意计费统计依据：120个GBK字节以内（含120个）记为1次计费调用；每超过120个GBK字节则多记1次计费调用。
-                    if (asrResult.Length <= 500)
-                    {
-                        DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，小于等于500，采用短文本转语音", asrResult.Length));
-
-                        string fileFullName = BaiduShortTTS(asrResult);
-
-                        if (string.IsNullOrEmpty(fileFullName))
-                        {
-                            DebugMessage("百度短文本转语音出现错误，数字人响应api错误", MSG_TYPE.ERROR);
-                            Ctrl2SayApiError();
-                        }
-                        else
-                        {
-                            DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
-                            Ctrl2SayWav(Path.GetFileName(fileFullName));
-                        }
-                    }
-                    else
-                    {
-                        DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，大于500，采用长文本转语音", asrResult.Length));
-                        CreateBaiduLongTTS(asrResult);
-                    }
-                }
             }
         }
         #endregion
@@ -1125,19 +860,19 @@ namespace VitualPersonSpeech
                             {
                                 DebugMessage("语句与AI作画正则匹配不成功，进行行业知识库问答");
 
-                                IndustryQAData industryQAData = GetSimilarIndustryQAData(asrStr);
+                                IndustryQASimilarResult industryQAData = GetSimilarIndustryQAData(asrStr);
 
                                 if (industryQAData != null)
                                 {
-                                    DebugMessage(string.Format("行业知识库匹配完成，ES权重：{0}，NLP相似度：{1}，原问题：{2}，匹配问题：{3}，匹配回答：{4}", industryQAData.relevance, industryQAData.similarity, industryQAData.questStr, industryQAData.similarStr, industryQAData.reply));
+                                    DebugMessage(string.Format("行业知识库匹配完成，ES权重：{0}，NLP相似度：{1}，原问题：{2}，匹配问题：{3}，匹配回答：{4}", industryQAData.relevance, industryQAData.similarity, industryQAData.questStr, industryQAData.similarStr, industryQAData.industryQAChatReply.replyContent));
 
                                     if (industryQAData.relevance > industryQARelevanceThreshold && industryQAData.similarity > industryQASimilarityThreshold)
                                     {
                                         DebugMessage("行业知识库匹配结果满足权重阈值和相似度阈值，使用行业知识库回答进行应答");
 
-                                        if (string.IsNullOrEmpty(industryQAData.fileSource))
+                                        if (string.IsNullOrEmpty(industryQAData.industryQAChatReply.replyContent))
                                         {
-                                            string fileFullName = BaiduShortTTS(industryQAData.reply);
+                                            string fileFullName = BaiduShortTTS(industryQAData.industryQAChatReply.replyContent);
 
                                             if (string.IsNullOrEmpty(fileFullName))
                                             {
@@ -1152,13 +887,13 @@ namespace VitualPersonSpeech
                                         }
                                         else
                                         {
-                                            if (File.Exists(Path.Combine(configJObect["similarIndustryQADataSetting"]["localFileDictionary"].ToString(), Path.GetFileName(industryQAData.fileSource))))
+                                            if (File.Exists(Path.Combine(configJObect["industryQADataSetting"]["localFileDictionary"].ToString(), Path.GetFileName(industryQAData.industryQAChatReply.replyContent))))
                                             {
-                                                Ctrl2SayWav(Path.GetFileName(industryQAData.fileSource));
+                                                Ctrl2SayWav(Path.GetFileName(industryQAData.industryQAChatReply.replyContent));
                                             }
                                             else
                                             {
-                                                string fileFullName = BaiduShortTTS(industryQAData.reply);
+                                                string fileFullName = BaiduShortTTS(industryQAData.industryQAChatReply.replyContent);
 
                                                 if (string.IsNullOrEmpty(fileFullName))
                                                 {
@@ -1412,6 +1147,161 @@ namespace VitualPersonSpeech
         }
         #endregion
 
+        #region 应答
+        public async void AIReply(string asrStr)
+        {
+            IndustryQASimilarResult industryQASimilarResult = GetSimilarIndustryQAData(asrStr);
+
+            if (industryQASimilarResult != null)
+            {
+                DebugMessage(string.Format("行业知识库匹配完成，ES权重：{0}，NLP相似度：{1}，原问题：{2}，匹配问题：{3}，匹配回答：{4}", industryQASimilarResult.relevance, industryQASimilarResult.similarity, industryQASimilarResult.questStr, industryQASimilarResult.similarStr, industryQASimilarResult.industryQAChatReply.replyContent));
+
+                if (industryQASimilarResult.relevance > industryQARelevanceThreshold && industryQASimilarResult.similarity > industryQASimilarityThreshold)
+                {
+                    DebugMessage("行业知识库匹配结果满足权重阈值和相似度阈值，使用行业知识库回答进行应答");
+
+                    // 如果本地有文件则播放本地文件
+                    if (File.Exists(industryQALocalFileDictionary + Path.GetFileName(industryQASimilarResult.industryQAChatReply.audioFileSource)))
+                    {
+                        Ctrl2SayWav(Path.GetFileName(industryQASimilarResult.industryQAChatReply.audioFileSource));
+                        return;
+                    }
+
+                    // 本地没有则下载音频
+                    // 查看音频链接地址，没有就百度文字转语音，有就下载
+                    if (string.IsNullOrEmpty(industryQASimilarResult.industryQAChatReply.audioFileSource))
+                    {
+                        DebugMessage("接口返回信息没有音频链接地址，进行文字转语音");
+                        string fileFullName = BaiduShortTTS(industryQASimilarResult.industryQAChatReply.replyContent);
+
+                        if (string.IsNullOrEmpty(fileFullName))
+                        {
+                            DebugMessage("百度短文本转语音出现错误，数字人响应api错误", MSG_TYPE.ERROR);
+                            Ctrl2SayApiError();
+                        }
+                        else
+                        {
+                            DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
+                            Ctrl2SayWav(Path.GetFileName(fileFullName));
+                        }
+                    }
+                    else
+                    {
+                        if(File.Exists(industryQALocalFileDictionary + Path.GetFileName(industryQASimilarResult.industryQAChatReply.audioFileSource)))
+                        {
+                            DebugMessage("本地已有回答音频文件，数字人开始说话:" + Path.GetFileName(industryQASimilarResult.industryQAChatReply.audioFileSource));
+                            Ctrl2SayWav(Path.GetFileName(Path.GetFileName(industryQASimilarResult.industryQAChatReply.audioFileSource)));
+                            return;
+                        }
+
+                        DebugMessage("本地没有回答音频文件，下载音频文件");
+
+                        ResultMsg resultMsg = await HttpUtils.DownloadFileAsync(string.Format(industryQADownloadFileAPIUrl, industryQASimilarResult.industryQAChatReply.audioFileSource), industryQALocalFileDictionary + Path.GetFileName(industryQASimilarResult.industryQAChatReply.audioFileSource));
+
+                        if (resultMsg.msgType == MSG_TYPE.ERROR)// 文件下载出错
+                        {
+                            DebugMessage("回答音频文件下载出错，开始文字转音频");
+
+                            string fileFullName = BaiduShortTTS(industryQASimilarResult.industryQAChatReply.replyContent);
+
+                            if (string.IsNullOrEmpty(fileFullName))
+                            {
+                                DebugMessage("百度短文本转语音出现错误，数字人响应api错误");
+                                Ctrl2SayApiError();
+                            }
+                            else
+                            {
+                                DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
+                                Ctrl2SayWav(Path.GetFileName(fileFullName));
+                            }
+                        }
+                        else// 文件下载完成
+                        {
+                            DebugMessage("回答音频文件下载完成，进行播放");
+                            Ctrl2SayWav(Path.GetFileName(Path.GetFileName(industryQASimilarResult.industryQAChatReply.audioFileSource)));
+                        }
+                    }
+                }
+                else
+                {
+                    DebugMessage("行业知识库匹配结果不满足相似度阈值或权重，进行百度文心AI应答");
+                    string asrResult = ChatWenXin(asrStr);
+
+                    if (string.IsNullOrEmpty(asrResult))
+                    {
+                        DebugMessage("调用文心ai应答接口出现错误，数字人响应api错误");
+                        Ctrl2SayApiError();
+                    }
+                    else
+                    {
+                        // 合成的文本，文本长度必须小于1024GBK字节。建议每次请求文本不超过120字节，约为60个汉字或者字母数字。
+                        // 请注意计费统计依据：120个GBK字节以内（含120个）记为1次计费调用；每超过120个GBK字节则多记1次计费调用。
+                        if (asrResult.Length <= 500)
+                        {
+                            DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，小于等于500，采用短文本转语音", asrResult.Length));
+
+                            string fileFullName = BaiduShortTTS(asrResult);
+
+                            if (string.IsNullOrEmpty(fileFullName))
+                            {
+                                DebugMessage("百度短文本转语音出现错误，数字人响应api错误");
+                                Ctrl2SayApiError();
+                            }
+                            else
+                            {
+                                DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
+                                Ctrl2SayWav(Path.GetFileName(fileFullName));
+                            }
+                        }
+                        else
+                        {
+                            DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，大于500，采用长文本转语音", asrResult.Length));
+                            CreateBaiduLongTTS(asrResult);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                DebugMessage("行业知识库未匹配到相关问答，进行百度文心AI应答");
+                string asrResult = ChatWenXin(asrStr);
+
+                if (string.IsNullOrEmpty(asrResult))
+                {
+                    DebugMessage("调用文心ai应答接口出现错误，数字人响应api错误");
+                    Ctrl2SayApiError();
+                }
+                else
+                {
+                    // 合成的文本，文本长度必须小于1024GBK字节。建议每次请求文本不超过120字节，约为60个汉字或者字母数字。
+                    // 请注意计费统计依据：120个GBK字节以内（含120个）记为1次计费调用；每超过120个GBK字节则多记1次计费调用。
+                    if (asrResult.Length <= 500)
+                    {
+                        DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，小于等于500，采用短文本转语音", asrResult.Length));
+
+                        string fileFullName = BaiduShortTTS(asrResult);
+
+                        if (string.IsNullOrEmpty(fileFullName))
+                        {
+                            DebugMessage("百度短文本转语音出现错误，数字人响应api错误", MSG_TYPE.ERROR);
+                            Ctrl2SayApiError();
+                        }
+                        else
+                        {
+                            DebugMessage("百度短文本转语音完成，数字人开始说话:" + Path.GetFileName(fileFullName));
+                            Ctrl2SayWav(Path.GetFileName(fileFullName));
+                        }
+                    }
+                    else
+                    {
+                        DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，大于500，采用长文本转语音", asrResult.Length));
+                        CreateBaiduLongTTS(asrResult);
+                    }
+                }
+            }
+        }
+        #endregion
+
         #region 行业知识库问答
         public void GetIndustryQADataByExcel()
         {
@@ -1441,16 +1331,18 @@ namespace VitualPersonSpeech
             return null;
         }
 
-        public void GetSimilarIndustryQADataSetting()
+        public void GetindustryQADataSetting()
         {
             try
             {
-                industryQAGetTokenAPIUrl = configJObect["similarIndustryQADataSetting"]["getTokenAPIUrl"].ToString();
-                industryQAGetAllQuestsAndReplysAPIUrl = configJObect["similarIndustryQADataSetting"]["getAllQuestsAndReplysAPIUrl"].ToString();
-                industryQASimilarAPIUrl = configJObect["similarIndustryQADataSetting"]["similarAPIUrl"].ToString();
-                industryQARelevanceThreshold = (float)configJObect["similarIndustryQADataSetting"]["relevanceThreshold"];
-                industryQASimilarityThreshold = (float)configJObect["similarIndustryQADataSetting"]["similarityThreshold"];
-
+                industryQAGetTokenAPIUrl = configJObect["industryQADataSetting"]["getTokenAPIUrl"].ToString();
+                industryQAGetAllReplysAndScenesAPIUrl = configJObect["industryQADataSetting"]["getAllReplysAndScenesAPIUrl"].ToString();
+                industryQASimilarAPIUrl = configJObect["industryQADataSetting"]["similarAPIUrl"].ToString();
+                industryQADownloadFileAPIUrl = configJObect["industryQADataSetting"]["downloadFileAPIUrl"].ToString();
+                
+                industryQARelevanceThreshold = (float)configJObect["industryQADataSetting"]["relevanceThreshold"];
+                industryQASimilarityThreshold = (float)configJObect["industryQADataSetting"]["similarityThreshold"];
+                industryQALocalFileDictionary = configJObect["industryQADataSetting"]["localFileDictionary"].ToString();
                 DebugMessage(string.Format("获取行业知识库相关设置完成，API地址：{0}，权重阈值：{1}，相似度阈值：{2}", industryQASimilarAPIUrl, industryQARelevanceThreshold, industryQASimilarityThreshold));
             }
             catch(Exception ex)
@@ -1482,11 +1374,11 @@ namespace VitualPersonSpeech
             }
         }
 
-        public void GetIndustryQAAllQuestsAndReplys()
+        public void DownloadAllIndustryFile()
         {
-            string getIndustryQAGetAllQuestsAndReplysAPIUrl = string.Format(industryQAGetAllQuestsAndReplysAPIUrl, industryQAUserAccessToken);
+            string getIndustryQAGetAllReplysAPIUrl = string.Format(industryQAGetAllReplysAndScenesAPIUrl, industryQAUserAccessToken);
 
-            string result = HttpUtils.Post(getIndustryQAGetAllQuestsAndReplysAPIUrl);
+            string result = HttpUtils.Post(getIndustryQAGetAllReplysAPIUrl);
             DebugMessage("获取行业问答库所有请求和回答，请求结果：" + result);
 
             JObject resultJObject = JObject.Parse(result);
@@ -1495,41 +1387,48 @@ namespace VitualPersonSpeech
             {
                 if (resultJObject["code"].ToString() == "SUCCESS")
                 {
-                    List<IndustryQAChatQuestReply> industryQAChatQuestReplyList = resultJObject["data"]["chatQuests"].ToObject<List<IndustryQAChatQuestReply>>();
-                    
-                    foreach(IndustryQAChatQuestReply industryQAChatQuestReply in industryQAChatQuestReplyList)
+                    List<IndustryQAChatReply> industryQAChatQuestReplyList = resultJObject["data"]["chatReplys"].ToObject<List<IndustryQAChatReply>>();
+
+                    foreach (IndustryQAChatReply industryQAChatReply in industryQAChatQuestReplyList)
                     {
-                        if (industryQAChatQuestReplyDic.ContainsKey(industryQAChatQuestReply.chatReply.id))
+                        if (!string.IsNullOrEmpty(industryQAChatReply.audioFileSource))
                         {
-                            industryQAChatQuestReplyDic.Add(industryQAChatQuestReply.chatReply.id, industryQAChatQuestReply);
+                            string audioFileName = Path.GetFileName(industryQAChatReply.audioFileSource);
+                            if (!File.Exists(industryQALocalFileDictionary + audioFileName))
+                            {
+                                AddDownloadFile(string.Format(industryQADownloadFileAPIUrl, industryQAChatReply.audioFileSource));
+                            }
+                        }
+
+                        foreach (IndustryQAChatReplyScene industryQAChatReplyScene in industryQAChatReply.industryQAChatReplyScenes)
+                        {
+                            if (!string.IsNullOrEmpty(industryQAChatReplyScene.fileSourceUrl))
+                            {
+                                string replySceneFileName = Path.GetFileName(industryQAChatReplyScene.fileSourceUrl);
+                                if (!File.Exists(industryQALocalFileDictionary + replySceneFileName))
+                                {
+                                    AddDownloadFile(string.Format(industryQADownloadFileAPIUrl, industryQAChatReplyScene.fileSourceUrl));
+                                }
+                            }
                         }
                     }
 
-                    DebugMessage("获取行业问答库所有请求和回答成功，共记：" + industryQAChatQuestReplyDic.Count + " 条");
+                    DebugMessage("获取行业问答库所有回答成功，共记：" + industryQAChatReplyDic.Count + " 条");
                 }
                 else
                 {
-                    DebugMessage("获取行业问答库所有请求和回答失败，不存在code");
+                    DebugMessage("获取行业问答库所有回答失败，不存在code");
                 }
             }
             else
             {
                 DebugMessage("获取行业问答库所有请求和回答失败");
             }
+
+            
         }
 
-        public void DownloadAllQuestsAndReplysFileSource()
-        {
-            foreach(KeyValuePair<int, IndustryQAChatQuestReply> keyValuePair  in industryQAChatQuestReplyDic)
-            {
-                if (!string.IsNullOrEmpty(keyValuePair.Value.chatReply.fileSource))
-                {
-                    AddDownloadFile(keyValuePair.Value.chatReply.fileSource);
-                }
-            }
-        }
-
-        public IndustryQAData GetSimilarIndustryQAData(string questionStr)
+        public IndustryQASimilarResult GetSimilarIndustryQAData(string questionStr)
         {
             string getSimilarIndustryQADataUrl = string.Format(industryQASimilarAPIUrl, questionStr, industryQAUserAccessToken);
 
@@ -1546,7 +1445,7 @@ namespace VitualPersonSpeech
 
                 if (resultJObject != null)
                 {
-                    return resultJObject["data"].ToObject<IndustryQAData>();
+                    return resultJObject["data"].ToObject<IndustryQASimilarResult>();
                 }
                 else
                 {
@@ -1815,6 +1714,8 @@ namespace VitualPersonSpeech
         #endregion
 
         #region Baidu语音在线合成
+        //private ResultMsg 
+
         private string BaiduShortTTS(string ttsStr)
         {
             //DebugMessage(string.Format("文心AI应答接口返回文字信息长度:{0}，小于等于500，采用短文本转语音", asrResult.Length));
@@ -1849,7 +1750,7 @@ namespace VitualPersonSpeech
                 }
                 else
                 {
-                    string wavFileName = Path.Combine(configJObect["similarIndustryQADataSetting"]["localFileDictionary"].ToString(), Guid.NewGuid().ToString("N") + ".wav");
+                    string wavFileName = Path.Combine(configJObect["industryQADataSetting"]["localFileDictionary"].ToString(), Guid.NewGuid().ToString("N") + ".wav");
                     File.WriteAllBytes(wavFileName, response.RawBytes);
                     return wavFileName;
                 }
@@ -2005,7 +1906,7 @@ namespace VitualPersonSpeech
                             Stream responseStream = response.GetResponseStream();
 
                             // 创建本地文件写入流
-                            Stream stream = new FileStream(Path.Combine(configJObect["similarIndustryQADataSetting"]["localFileDictionary"].ToString(), wavFileName), FileMode.Create);
+                            Stream stream = new FileStream(Path.Combine(configJObect["industryQADataSetting"]["localFileDictionary"].ToString(), wavFileName), FileMode.Create);
 
                             byte[] bArr = new byte[BlockSize];
                             int size = responseStream.Read(bArr, 0, (int)bArr.Length);
@@ -2108,13 +2009,13 @@ namespace VitualPersonSpeech
                 DebugMessage("Audio2Face服务在线");
                 SetAudio2FaceServerStatusLabel(true);
 
-                if (Audio2FaceUtils.LoadAudio2FaceUSD(configJObect["fileDictionary"].ToString() + configJObect["audio2Face"]["usdFile"].ToString()))
+                if (Audio2FaceUtils.LoadAudio2FaceUSD(configJObect["audio2Face"]["usdFile"].ToString()))
                 {
                     DebugMessage("Audio2Face服务加载 " + configJObect["audio2Face"]["usdFile"].ToString() + " 成功", MSG_TYPE.INFO);
 
                     Thread.Sleep(10000);
 
-                    if(Audio2FaceUtils.ActivateAudio2FaceExporterStreamLiveLink())
+                    if (Audio2FaceUtils.ActivateAudio2FaceExporterStreamLiveLink())
                     {
                         DebugMessage("Audio2Face服务建立LveLink连接成功", MSG_TYPE.INFO);
                     }
@@ -2423,7 +2324,7 @@ namespace VitualPersonSpeech
         {
             try
             {
-                this.downloadTask = new DownloadTask(configJObect["similarIndustryQADataSetting"]["localFileDictionary"].ToString());
+                this.downloadTask = new DownloadTask(configJObect["industryQADataSetting"]["localFileDictionary"].ToString());
                 this.downloader = new ThreadWorker(downloadTask);
                 this.downloadTask.StartEvent += OnDownloadStart;
                 this.downloadTask.StepEvent += OnDownloadStep;
@@ -2431,7 +2332,7 @@ namespace VitualPersonSpeech
                 this.downloadTask.ErrorEvent += OnDownloadError;
                 this.downloader.Start();
 
-                DebugMessage("初始化文件下载器完成，本地文件目录：" + configJObect["similarIndustryQADataSetting"]["localFileDictionary"].ToString());
+                DebugMessage("初始化文件下载器完成，本地文件目录：" + configJObect["industryQADataSetting"]["localFileDictionary"].ToString());
             }
             catch (Exception exception)
             {
