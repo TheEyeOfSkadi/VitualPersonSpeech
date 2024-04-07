@@ -61,7 +61,7 @@ namespace VitualPersonSpeech.Tasks
 
         public string GetLocalPath(string fileName)
         {
-            return localFolder + "\\" + fileName;
+            return localFolder + "\\" + Path.GetFileName(fileName);
         }
 
         public override void doWork()

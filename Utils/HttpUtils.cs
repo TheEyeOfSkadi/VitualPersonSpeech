@@ -2,7 +2,10 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
+using VitualPersonSpeech.Model;
 
 namespace VitualPersonSpeech.Utils
 {
@@ -118,6 +121,38 @@ namespace VitualPersonSpeech.Utils
             {
                 log.Error("Get请求发送失败,失败信息:" + e.Message);
                 return null;
+            }
+        }
+
+        // 下载文件
+        public static async Task<ResultMsg> DownloadFileAsync(string url, string localFileFullName)
+        {
+            try
+            {
+                HttpClient client = new HttpClient();
+                using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+                {
+                    if(response.IsSuccessStatusCode)
+                    {
+
+                    }
+                    response.EnsureSuccessStatusCode(); // 确保请求成功  
+
+                    // 获取响应内容流  
+                    using (var contentStream = await response.Content.ReadAsStreamAsync())
+                    {
+                        // 创建一个本地文件流来写入下载的内容  
+                        using (var fileStream = new FileStream(localFileFullName, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+                        {
+                            await contentStream.CopyToAsync(fileStream);
+                        }
+                    }
+                }
+                return ResultMsg.Success(localFileFullName);
+            }
+            catch(Exception exception)
+            {
+                return ResultMsg.Error("下载文件出现异常，异常信息：" + exception.Message);
             }
         }
     }

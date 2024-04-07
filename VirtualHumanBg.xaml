@@ -7,6 +7,6 @@
         mc:Ignorable="d"
         Title="VirtualHumanBg" Height="450" Width="800" WindowStyle="None" WindowState="Maximized">
     <Grid>
-        <Image x:Name="contentImage" Margin="0,0,0,0" Stretch="Fill"/>
+        <Image x:Name="contentImage" Source="{Binding MyImage}" Margin="0,0,0,0" Stretch="Fill"/>
     </Grid>
 </Window>

@@ -7,7 +7,7 @@ using VitualPersonSpeech.Model;
 
 namespace MessageCtrl
 {
-    public delegate void OutputDebugMsg(string str, MSG_TYPE msgType = MSG_TYPE.INFO, bool isShowNotifier = false);
+    public delegate void OutputDebugMsg(string str, MSG_TYPE msgType = MSG_TYPE.INFO);
 
     public abstract class MessageCtrlBase
     {
