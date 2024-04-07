@@ -139,8 +139,8 @@ namespace VitualPersonSpeech.Utils
         MSP_ERROR_NET_OPENSOCK = 10201,     /* 0x27D9 */   /* Open socket */
         MSP_ERROR_NET_CONNECTSOCK = 10202,     /* 0x27DA */   /* Connect socket */
         MSP_ERROR_NET_ACCEPTSOCK = 10203,     /* 0x27DB */   /* Accept socket */
-        MSP_ERROR_NET_SENDSOCK = 10204,     /* 0x27DC */   /* Send socket data */
-        MSP_ERROR_NET_RECVSOCK = 10205,     /* 0x27DD */   /* Recv socket data */
+        MSP_ERROR_NET_SENDSOCK = 10204,     /* 0x27DC */   /* Send socket _data */
+        MSP_ERROR_NET_RECVSOCK = 10205,     /* 0x27DD */   /* Recv socket _data */
         MSP_ERROR_NET_INVALIDSOCK = 10206,     /* 0x27DE */   /* Invalid socket handle */
         MSP_ERROR_NET_BADADDRESS = 10207,     /* 0x27EF */   /* Bad network address */
         MSP_ERROR_NET_BINDSEQUENCE = 10208,     /* 0x27E0 */   /* Bind after listen/connect */
@@ -198,7 +198,7 @@ namespace VitualPersonSpeech.Utils
         MSP_ERROR_RES_WRITE = 10507,     /* 0x290B */   /* Write read-only resource */
         MSP_ERROR_RES_LEAK = 10508,     /* 0x290C */   /* Resource leak out */
         MSP_ERROR_RES_HEAD = 10509,     /* 0x290D */   /* Resource head currupt */
-        MSP_ERROR_RES_DATA = 10510,     /* 0x290E */   /* Resource data currupt */
+        MSP_ERROR_RES_DATA = 10510,     /* 0x290E */   /* Resource _data currupt */
         MSP_ERROR_RES_SKIP = 10511,     /* 0x290F */   /* Resource file skipped */
 
         /* Error codes of TTS 10600(0x2968)*/
@@ -229,7 +229,7 @@ namespace VitualPersonSpeech.Utils
         MSP_ERROR_TUV_GETHIDPARAM = 10901,     /* 0x2A95 */   /* Get Busin Param huanid*/
         MSP_ERROR_TUV_TOKEN = 10902,     /* 0x2A96 */   /* Get Token */
         MSP_ERROR_TUV_CFGFILE = 10903,     /* 0x2A97 */   /* Open cfg file */
-        MSP_ERROR_TUV_RECV_CONTENT = 10904,     /* 0x2A98 */   /* received content is error */
+        MSP_ERROR_TUV_RECV_CONTENT = 10904,     /* 0x2A98 */   /* received replyContent is error */
         MSP_ERROR_TUV_VERFAIL = 10905,     /* 0x2A99 */   /* Verify failure */
 
         /* Error codes of IMTV */

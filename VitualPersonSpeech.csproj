@@ -51,9 +51,6 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AipSdk, Version=4.15.13.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Baidu.AI.4.15.13\lib\net45\AipSdk.dll</HintPath>
-    </Reference>
     <Reference Include="log4net, Version=2.0.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>packages\log4net.2.0.15\lib\net45\log4net.dll</HintPath>
     </Reference>
@@ -200,12 +197,6 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
-    <Reference Include="ToastNotifications, Version=2.5.1.0, Culture=neutral, PublicKeyToken=e89d9d7314a7c797, processorArchitecture=MSIL">
-      <HintPath>packages\ToastNotifications.2.5.1\lib\net40\ToastNotifications.dll</HintPath>
-    </Reference>
-    <Reference Include="ToastNotifications.Messages, Version=2.5.1.0, Culture=neutral, PublicKeyToken=e89d9d7314a7c797, processorArchitecture=MSIL">
-      <HintPath>packages\ToastNotifications.Messages.2.5.1\lib\net40\ToastNotifications.Messages.dll</HintPath>
-    </Reference>
     <Reference Include="VoiceRecorder.Audio, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Libs\VoiceRecorder.Audio.dll</HintPath>
@@ -225,30 +216,34 @@
     <Compile Include="HttpServerService.cs" />
     <Compile Include="Model\BaiduAIImgResult.cs" />
     <Compile Include="Model\BaiduAsrResult.cs" />
-    <Compile Include="Model\EventHandlerMsg.cs" />
+    <Compile Include="Model\ResultMsg.cs" />
     <Compile Include="Model\IndustryQAChatQuestReply.cs" />
-    <Compile Include="Model\IndustryQAData.cs" />
+    <Compile Include="Model\IndustryQASimilarResult.cs" />
     <Compile Include="Model\LocalIndustryQAData.cs" />
     <Compile Include="Model\MultiScreenPlayerCtrlType.cs" />
     <Compile Include="Model\VisualPersonCtrlType.cs" />
     <Compile Include="Model\VoiceData.cs" />
     <Compile Include="Model\WenXinMessage.cs" />
-    <Compile Include="Model\WenXinResult.cs" />
+    <Compile Include="Model\WenXinResult_ERNIE_Lite_8K_0922.cs" />
+    <Compile Include="Model\WenXinResult_ERNIE_3D5_8K.cs" />
     <Compile Include="Model\XunfeiAsrResult.cs" />
     <Compile Include="Tasks\DownloadTask.cs" />
     <Compile Include="Tasks\Task.cs" />
     <Compile Include="Tasks\ThreadWorker.cs" />
-    <Compile Include="Utils\Audio2FaceUtils.cs" />
-    <Compile Include="Utils\BaiduAIUtils.cs" />
+    <Compile Include="Utils\AIImgUtils\BaiduAIImg.cs" />
+    <Compile Include="Utils\AIReplyUtils\BaiduWenXinAIReply.cs" />
+    <Compile Include="Utils\AudioToFaceUtils\NvAuido2Face.cs" />
     <Compile Include="Utils\CommonUtils.cs" />
     <Compile Include="Utils\EncryptUtils.cs" />
     <Compile Include="Utils\HandleMsgTask.cs" />
     <Compile Include="Utils\HttpUtils.cs" />
+    <Compile Include="Utils\KnowledgeBaseUtils\ParthenonKnowledgeBase.cs" />
     <Compile Include="Utils\MessageCtrl\MessageCtrlBase.cs" />
     <Compile Include="Utils\MessageCtrl\NetworkCtrl.cs" />
     <Compile Include="Utils\MessageCtrl\UdpServerCtrl.cs" />
     <Compile Include="Utils\NetUtils.cs" />
     <Compile Include="Utils\StringUtils.cs" />
+    <Compile Include="Utils\TTSUtils\BaiduTTS.cs" />
     <Compile Include="Utils\XunFeiUtils.cs" />
     <Compile Include="VirtualHumanBg.xaml.cs">
       <DependentUpon>VirtualHumanBg.xaml</DependentUpon>
@@ -320,7 +315,6 @@
     <Content Include="Libs\VoiceRecorder.Audio.dll" />
     <Content Include="Libs\XunFei\msc.dll" />
     <Content Include="Libs\XunFei\msc_x64.dll" />
-    <Resource Include="v2-e3ff581c4f19196977248b7297a044f5_r.jpg" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Libs\XunFei\audio\" />
