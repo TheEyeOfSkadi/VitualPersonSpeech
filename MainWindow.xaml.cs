@@ -23,6 +23,8 @@ using VitualPersonSpeech.Utils.KnowledgeBaseUtils;
 using VitualPersonSpeech.Utils.TTSUtils;
 using VoiceRecorder.Audio;
 using WebSocket4Net;
+using static VitualPersonSpeech.Utils.MultiScreenPlayerCmdUtils;
+using static VitualPersonSpeech.Utils.VirtualHumanCmdUtils;
 
 namespace VitualPersonSpeech
 {
@@ -608,6 +610,7 @@ namespace VitualPersonSpeech
                     }
                     else
                     {
+
                         // 进行语音结果判断，是否是ai作画
                         if (baiduAIImg.MatchAIImg(asrStr)) // 先判断是作画还是应答
                         {
@@ -770,6 +773,7 @@ namespace VitualPersonSpeech
 
             DebugMessage("800ms后开始流式语音识别");
             Thread.Sleep(800);
+
             OpenAsrWebSocket();
         }
        
@@ -781,12 +785,12 @@ namespace VitualPersonSpeech
 
             if (baiduAIImgResultMsg.StatusCode == StatusCode.SUCCESS)
             {
-                UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.AIImg, AIImgProgress.AIImgSuccess, baiduAIImgResultMsg.Data.ToString()));
+                UdpSendMessage2VirtualHumanSever(VirtualHumanCmdUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.AIImg, AIImgProgress.AIImgSuccess, baiduAIImgResultMsg.Data.ToString()));
                 DebugMessage(string.Format("AI作画生成成功,画作地址:{0}", baiduAIImgResultMsg.Data.ToString()));
             }
             else
             {
-                UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.AIImg, AIImgProgress.AIImgFail));
+                UdpSendMessage2VirtualHumanSever(VirtualHumanCmdUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.AIImg, AIImgProgress.AIImgFail));
                 DebugMessage("AI作画生成失败", MSG_TYPE.ERROR);
             }
         }
@@ -1045,56 +1049,56 @@ namespace VitualPersonSpeech
         private void Ctrl2StandBy()
         {
             nvAuido2Face.Mute();
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
         }
 
         private void Ctrl2Play()
         {
             nvAuido2Face.Play();
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.TakeAnim));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.TakeAnim));
         }
 
         private void Ctrl2Pause()
         {
             nvAuido2Face.Pause();
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
         }
 
         private void Ctrl2SayWelcome()
         {
             nvAuido2Face.SayWelcome();
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
         }
 
         private void Ctrl2SayApiError()
         {
             nvAuido2Face.SayApiError();
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
         }
 
         private void Ctrl2SayNoVoice()
         {
             nvAuido2Face.SayNoVoice();
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
         }
 
         private void Ctrl2SayInAIReply()
         {
             nvAuido2Face.SayInAIReply();
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
         }
 
         private void CtrlSayInAIImg()
         {
             nvAuido2Face.SayInAIImg();
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.StandBy));
         }
 
         private void Ctrl2SayWav(string wavName)
         {
             Thread.Sleep(200);
             nvAuido2Face.SayWav(wavName);
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.TakeAnim));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.TakeAnim));
         }
         #endregion
 
@@ -1261,21 +1265,21 @@ namespace VitualPersonSpeech
                 string targetIP = messageArray[2];
                 if (messageArray[1] == "Play")
                 {
-                    UdpSendMessage2MultiScreenPlayer(targetIP, StringUtils.GetMultiScreenPlayerCtrlStreamStr(StreamCtrlType.Play));
+                    UdpSendMessage2MultiScreenPlayer(targetIP, GetMultiScreenPlayerCtrlStreamStr(StreamCtrlType.Play));
 
                     if (!string.IsNullOrEmpty(multiScreenPlayerIP) && multiScreenPlayerIP != targetIP)
                     {
-                        UdpSendMessage2MultiScreenPlayer(multiScreenPlayerIP, StringUtils.GetMultiScreenPlayerCtrlStreamStr(StreamCtrlType.Stop));
+                        UdpSendMessage2MultiScreenPlayer(multiScreenPlayerIP, GetMultiScreenPlayerCtrlStreamStr(StreamCtrlType.Stop));
                     }
 
                     multiScreenPlayerIP = targetIP;
                 }
                 else if (messageArray[1] == "Stop")
                 {
-                    UdpSendMessage2MultiScreenPlayer(targetIP, StringUtils.GetMultiScreenPlayerCtrlStreamStr(StreamCtrlType.Stop));
+                    UdpSendMessage2MultiScreenPlayer(targetIP, GetMultiScreenPlayerCtrlStreamStr(StreamCtrlType.Stop));
                     if (!string.IsNullOrEmpty(multiScreenPlayerIP) && multiScreenPlayerIP != targetIP)
                     {
-                        UdpSendMessage2MultiScreenPlayer(multiScreenPlayerIP, StringUtils.GetMultiScreenPlayerCtrlStreamStr(StreamCtrlType.Stop));
+                        UdpSendMessage2MultiScreenPlayer(multiScreenPlayerIP, GetMultiScreenPlayerCtrlStreamStr(StreamCtrlType.Stop));
                     }
 
                     multiScreenPlayerIP = "";
@@ -1285,14 +1289,14 @@ namespace VitualPersonSpeech
             {
                 if (!string.IsNullOrEmpty(multiScreenPlayerIP))
                 {
-                    UdpSendMessage2MultiScreenPlayer(multiScreenPlayerIP, StringUtils.GetMultiScreenPlayerCtrlPositionStr(int.Parse(messageArray[1]), int.Parse(messageArray[2])));
+                    UdpSendMessage2MultiScreenPlayer(multiScreenPlayerIP, MultiScreenPlayerCmdUtils.GetMultiScreenPlayerCtrlPositionStr(int.Parse(messageArray[1]), int.Parse(messageArray[2])));
                 }
             }
             else if (messageArray[0] == "Size")
             {
                 if (!string.IsNullOrEmpty(multiScreenPlayerIP))
                 {
-                    UdpSendMessage2MultiScreenPlayer(multiScreenPlayerIP, StringUtils.GetMultiScreenPlayerCtrlSizeStr(int.Parse(messageArray[1]), int.Parse(messageArray[2])));
+                    UdpSendMessage2MultiScreenPlayer(multiScreenPlayerIP, MultiScreenPlayerCmdUtils.GetMultiScreenPlayerCtrlSizeStr(int.Parse(messageArray[1]), int.Parse(messageArray[2])));
                 }
             }
         }
@@ -1323,7 +1327,7 @@ namespace VitualPersonSpeech
 
         private void CheckVirtualPersonTimerTick(object sender, EventArgs e)
         {
-            UdpSendMessage2VirtualHumanSever(StringUtils.GetVirtualPersonCtrlStr(VirtualPersonCtrlType.HeartBeat));
+            UdpSendMessage2VirtualHumanSever(GetVirtualPersonCtrlStr(VirtualPersonCtrlType.HeartBeat));
 
             bool flag = true;
 

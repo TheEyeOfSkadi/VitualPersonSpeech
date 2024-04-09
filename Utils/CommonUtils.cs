@@ -59,5 +59,35 @@ namespace VitualPersonSpeech.Utils
             }
             return Encoding.UTF8.GetString(lb.ToArray());
         }
+
+        /// <summary>
+        /// 字节数组转16进制字符串
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static string byteToHexStr(byte[] bytes)
+        {
+            string returnStr = "";
+            if (bytes != null)
+            {
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    returnStr += bytes[i].ToString("X2");
+                }
+            }
+            return returnStr;
+        }
+
+        public static string UrlEncode(string str)
+        {
+            StringBuilder sb = new StringBuilder();
+            byte[] byStr = Encoding.UTF8.GetBytes(str); //默认是System.Text.Encoding.Default.GetBytes(str)
+            for (int i = 0; i < byStr.Length; i++)
+            {
+                sb.Append(@"%" + Convert.ToString(byStr[i], 16));
+            }
+
+            return (sb.ToString());
+        }
     }
 }
